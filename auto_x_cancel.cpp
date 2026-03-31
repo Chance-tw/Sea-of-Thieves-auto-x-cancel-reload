@@ -18,7 +18,7 @@ void sendx();
 int main(){
     HDC display=GetDC(NULL); //gets full display as device context
 
-    //start the listener for ctrl+alt+x to kill the program at any point
+    //start the listener for ctrl+v to kill the program at any point
     std::thread x(killpro, std::ref(display));
     x.detach();
 
@@ -68,8 +68,8 @@ int main(){
 }
 
 void killpro(HDC &devicecontext){
-    //registers a hotkey to windows for if ctrl+alt+X is pressed with the no repeat modifier
-    RegisterHotKey(NULL, 234, 0x0002|0x12|0x4000,0x58); //0x0002=any control, 0x12=any alt, 0x400=no repeat(sending extra hotkey messages past the one), 0x58=X
+    //registers a hotkey to windows for if ctrl+v is pressed with the no repeat modifier
+    RegisterHotKey(NULL, 234, 0x0002|0x4000,0x56); //0x0002=any control, 0x400=no repeat(sending extra hotkey messages past the one), 0x56=V
 
     //check if hotkey sent return message from being pressed
     MSG msg={0};
