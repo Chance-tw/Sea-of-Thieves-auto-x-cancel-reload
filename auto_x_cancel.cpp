@@ -8,8 +8,8 @@
 
 void killpro(HDC &devicecontext); //kill process
 
-std::uint8_t lisman(std::vector<std::uint8_t> keys); //listener manager
-void listener(std::uint8_t key, std::atomic<bool> &stop, std::atomic<std::uint8_t> &pressedkey);
+void lisman(std::vector<std::uint8_t> keys, std::atomic<std::uint8_t> &pressedkey); //listener manager
+void listener(std::uint8_t key, std::atomic<std::uint8_t> &pressedkey);
 
 bool getrgbvalues(COLORREF rgbneed, int x, int y, HDC &devicecontext);
 
@@ -35,24 +35,23 @@ int main(){
 
     int xcord=value found with auto_x_cancel_helper;
     int ycord=value found with auto_x_cancel_helper;
-    COLORREF rgbneed=values found with auto_x_cancel_helper;
+    COLORREF rgbneed=value found with auto_x_cancel_helper;
     bool firedgun=false;
-    std::uint8_t lisreturn;
 
-    //0x01=left mouse
-    //put hex key codes to keys that switch off your weapons in the liskeys vector seperated by commas, hex key codes found at https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-    std::vector<std::uint8_t> liskeys={0x01};
+    //put hex key codes to keys that switch off your weapons in the liskeys vector seperated by commas replacing the "key", hex key codes found at https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+    std::vector<std::uint8_t> liskeys={0x01, key, key}; //0x01=left mouse, needed to determine when gun is fired
+    std::atomic<std::uint8_t> pressedkey{0};
+    lisman(liskeys, pressedkey); //starts listeners for all the keys to update the pressedkey
 
     while (true){
         if (getrgbvalues(rgbneed, xcord, ycord, display)){
-            lisreturn=lisman(liskeys); //listens for all the keys, restricting main until lisman returns for main to check the return value
-            
-            if (lisreturn==0x01){ //0x01=left mouse
+            if (pressedkey==0x01){ //0x01=left mouse
                 firedgun=true;
             }
 
             if (firedgun){
                 firedgun=false;
+                pressedkey=0; //flushes pressedkey
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between key inputs
                 sendx();
@@ -66,6 +65,8 @@ int main(){
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between rgb checks
     }
+    
+    return 0;
 }
 
 void killpro(HDC &devicecontext){
@@ -83,34 +84,22 @@ void killpro(HDC &devicecontext){
     }
 }
 
-std::uint8_t lisman(std::vector<std::uint8_t> keys){
-    std::atomic<bool> stop{false}; //to stop all the other threads
-    std::atomic<std::uint8_t> pressedkey{0}; //for the first thread to get its input to return what that input was
-
-    //spawns all the threads to listen for each possible weapon state changing input
+void lisman(std::vector<std::uint8_t> keys, std::atomic<std::uint8_t> &pressedkey){
+    //spawns all the threads to listen for each possible weapon state changing input, then dies
     for (int i=0; i<(keys.size()); i++){
-        std::thread t(listener, keys[i], std::ref(stop), std::ref(pressedkey));
+        std::thread t(listener, keys[i], std::ref(pressedkey));
         t.detach();
     }
-
-    while (!stop){
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    
-    return pressedkey; //returns the pressed key to check the value
 }
 
-void listener(std::uint8_t key, std::atomic<bool> &stop, std::atomic<std::uint8_t> &pressedkey){
-    while (!(GetAsyncKeyState(key) & 0x8000)){ //while the input is not recieved
-        if (stop){ //if a thread gets its input and updates the stop, this thread will die
-            return;
+void listener(std::uint8_t key, std::atomic<std::uint8_t> &pressedkey){
+    while (true){ //so the thread will continue and not complete after the input is recieved and pressedkey updated
+        while (!(GetAsyncKeyState(key) & 0x8000)){ //while the input is not recieved
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
 
-    pressedkey=key; //updates the key pressed
-    stop=true; //notifys all other threads to stop
-    return;
+        pressedkey=key; //updates the key pressed
+    }
 }
 
 bool getrgbvalues(COLORREF rgbneed, int x, int y, HDC &devicecontext){
