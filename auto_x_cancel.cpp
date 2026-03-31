@@ -45,8 +45,6 @@ int main(){
     while (true){
         if (getrgbvalues(rgbneed, xcord, ycord, display)){
             if (firedgun){ //if the listener updates firedgun from getting the left mouse input
-                firedgun=false; //reset firedgun
-
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between key inputs
                 sendx();
@@ -55,6 +53,9 @@ int main(){
                 continue;
             }
         }
+        
+        firedgun=false; //reset firedgun outside if to remove it staying true after last bullet fired, causing the input to send when ammo is gotten from having none
+        
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between rgb checks
     }
 
