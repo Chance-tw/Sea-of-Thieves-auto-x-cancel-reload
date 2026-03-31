@@ -18,8 +18,8 @@ void sendx();
 int main(){
     HDC display=GetDC(NULL); //gets full display as device context
 
-    std::cout<<"CTRL+Q to quit the program!";
-    //start the listener for ctrl+q to kill/quit the program at any point
+    std::cout<<"CTRL+K to quit the program!";
+    //start the listener for ctrl+k to kill the program at any point
     std::thread x(killpro, std::ref(display));
     x.detach();
 
@@ -69,8 +69,8 @@ int main(){
 }
 
 void killpro(HDC &devicecontext){
-    //registers a hotkey to windows for if ctrl+q is pressed with the no repeat modifier
-    RegisterHotKey(NULL, 234, 0x0002|0x4000,0x51); //0x0002=any control, 0x400=no repeat(sending extra hotkey messages past the one), 0x51=Q
+    //registers a hotkey to windows for if ctrl+k is pressed with the no repeat modifier
+    RegisterHotKey(NULL, 234, 0x0002|0x4000,0x4B); //0x0002=any control, 0x400=no repeat(sending extra hotkey messages past the one), 0x4B=K
 
     //check if hotkey sent return message from being pressed
     MSG msg={0};
