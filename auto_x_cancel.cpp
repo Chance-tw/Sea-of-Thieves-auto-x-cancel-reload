@@ -92,6 +92,10 @@ std::uint8_t lisman(std::vector<std::uint8_t> keys){
         t.detach();
     }
 
+    while (!stop){
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    
     return pressedkey; //returns the pressed key to check the value
 }
 
