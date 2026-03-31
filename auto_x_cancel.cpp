@@ -8,8 +8,7 @@
 
 void killpro(HDC &devicecontext); //kill process
 
-void lisman(std::vector<std::uint8_t> keys, std::atomic<std::uint8_t> &pressedkey); //listener manager
-void listener(std::uint8_t key, std::atomic<std::uint8_t> &pressedkey);
+void listener(std::atomic<bool> &firedgun); //listener for left mouse
 
 bool getrgbvalues(COLORREF rgbneed, int x, int y, HDC &devicecontext);
 
@@ -36,22 +35,18 @@ int main(){
     int xcord=value found with auto_x_cancel_helper;
     int ycord=value found with auto_x_cancel_helper;
     COLORREF rgbneed=value found with auto_x_cancel_helper;
-    bool firedgun=false;
 
-    //put hex key codes to keys that switch off your weapons in the liskeys vector seperated by commas replacing the "key", hex key codes found at https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-    std::vector<std::uint8_t> liskeys={0x01, key, key}; //0x01=left mouse, needed to determine when gun is fired
-    std::atomic<std::uint8_t> pressedkey{0};
-    lisman(liskeys, pressedkey); //starts listeners for all the keys to update the pressedkey
+    std::atomic<bool> firedgun{false};
+
+    //starts listener for left mouse
+    std::thread t(listener, std::ref(firedgun));
+    t.detach();
 
     while (true){
         if (getrgbvalues(rgbneed, xcord, ycord, display)){
-            if (pressedkey==0x01){ //0x01=left mouse
-                firedgun=true;
-            }
+            if (firedgun){ //if the listener updates firedgun from getting the left mouse input
+                firedgun=false; //reset firedgun
 
-            if (firedgun){
-                firedgun=false;
-                pressedkey=0; //flushes pressedkey
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between key inputs
                 sendx();
@@ -60,12 +55,9 @@ int main(){
                 continue;
             }
         }
-        else{
-            continue;
-        }
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between rgb checks
     }
-    
+
     return 0;
 }
 
@@ -84,21 +76,13 @@ void killpro(HDC &devicecontext){
     }
 }
 
-void lisman(std::vector<std::uint8_t> keys, std::atomic<std::uint8_t> &pressedkey){
-    //spawns all the threads to listen for each possible weapon state changing input, then dies
-    for (int i=0; i<(keys.size()); i++){
-        std::thread t(listener, keys[i], std::ref(pressedkey));
-        t.detach();
-    }
-}
-
-void listener(std::uint8_t key, std::atomic<std::uint8_t> &pressedkey){
-    while (true){ //so the thread will continue and not complete after the input is recieved and pressedkey updated
-        while (!(GetAsyncKeyState(key) & 0x8000)){ //while the input is not recieved
+void listener(std::atomic<bool> &firedgun){
+    while (true){ //so the thread will continue and not complete after the input is recieved and pressedkey up
+        while (!(GetAsyncKeyState(0x01) & 0x8000)){ //while the input 0x01(left mouse) is not recieved
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
-        pressedkey=key; //updates the key pressed
+        firedgun=true; //updates if input is recieved and gets past the busy loop
     }
 }
 
