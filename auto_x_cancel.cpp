@@ -46,7 +46,7 @@ int main(){
         if (getrgbvalues(rgbneed, xcord, ycord, display)){
             if (firedgun){ //if the listener updates firedgun from getting the left mouse input
                 sendx();
-                std::this_thread::sleep_for(std::chrono::milliseconds(25)); //small delay between key inputs
+                std::this_thread::sleep_for(std::chrono::milliseconds(15)); //small delay between key inputs
                 sendx();
             }
             else{
