@@ -5,7 +5,6 @@
 #include <chrono>
 #include <fstream>
 #include <filesystem>
-#include <cstdlib>
 
 struct bulletvars{
     std::uint16_t xcord=0;
