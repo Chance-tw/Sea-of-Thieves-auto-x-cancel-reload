@@ -8,8 +8,8 @@
 #include <filesystem>
 
 struct bulletvars{
-    int xcord=0;
-    int ycord=0;
+    std::uint8_t xcord=0;
+    std::uint8_t ycord=0;
     std::uint32_t rgbneed=0;
 };
 
