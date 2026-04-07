@@ -13,7 +13,7 @@ struct bulletvars{
     std::uint32_t rgbneed=0;
 };
 
-void killpro(HDC &devicecontext); //kill process
+void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killing); //kill process
 
 void listener(std::atomic<bool> &firedgun); //listener for left mouse
 
@@ -26,7 +26,9 @@ int main(){
 
     std::cout<<"CTRL+K to quit the program!";
     //start the listener for ctrl+k to kill the program at any point
-    std::thread x(killpro, std::ref(display));
+    std::atomic<bool> killing{false}; //to notify threads to end
+    std::atomic<bool> killed{false}; //to notify threads are done killing
+    std::thread x(killpro, std::ref(display), std::ref(killing), std::ref(killed));
     x.detach();
 
     /*
@@ -59,10 +61,10 @@ int main(){
     std::atomic<bool> firedgun{false};
 
     //starts listener for left mouse
-    std::thread t(listener, std::ref(firedgun));
+    std::thread t(listener, std::ref(firedgun), std::ref(killing));
     t.detach();
 
-    while (true){
+    while (!killing){
         if (getrgbvalues(bullet.rgbneed, bullet.xcord, bullet.ycord, display)){
             if (firedgun){ //if the listener updates firedgun from getting the left mouse input
                 sendx();
@@ -79,10 +81,12 @@ int main(){
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between rgb checks
     }
 
+    killed=true;
+
     return 0;
 }
 
-void killpro(HDC &devicecontext){
+void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killed){
     //registers a hotkey to windows for if ctrl+k is pressed with the no repeat modifier
     RegisterHotKey(NULL, 234, 0x0002|0x4000,0x4B); //0x0002=any control, 0x400=no repeat(sending extra hotkey messages past the one), 0x4B=K
 
@@ -91,15 +95,19 @@ void killpro(HDC &devicecontext){
     while (GetMessage(&msg, NULL, 0, 0)){ //when a message recieved
         if (msg.message==WM_HOTKEY){ //if the message is the hotkey
             UnregisterHotKey(NULL, 234); //destroy hotkey so it doesnt persist after program ends
+            killing=true;
+            while(!killed){
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
             ReleaseDC(NULL, devicecontext); //release the device context for getting the screen
             exit(0); //kill the whole program
         }
     }
 }
 
-void listener(std::atomic<bool> &firedgun){
-    while (true){ //so the thread will continue and not complete after the input is recieved and pressedkey up
-        while (!(GetAsyncKeyState(0x01) & 0x8000)){ //while the input 0x01(left mouse) is not recieved
+void listener(std::atomic<bool> &firedgun, std::atomic<bool> &killing){
+    while (!killing){ //so the thread will continue and not complete after the input is recieved and pressedkey up
+        while (!(GetAsyncKeyState(0x01) & 0x8000) && !killing){ //while the input 0x01(left mouse) is not recieved
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
