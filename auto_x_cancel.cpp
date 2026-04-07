@@ -5,6 +5,13 @@
 #include <chrono>
 #include <windows.h>
 #include <atomic>
+#include <fstream>
+
+struct bulletvars{
+    std::uint16_t xcord=0;
+    std::uint16_t ycord=0;
+    std::uint32_t rgbneed=0;
+};
 
 void killpro(HDC &devicecontext); //kill process
 
@@ -26,15 +33,28 @@ int main(){
     How to use the auto_x_cancel_helper to get info for code to work
         1. Take a screenshot of your game with a weapon out
         2. Open the screenshot in a complete full screen mode
-        3. run the auto_x_cancel_helper
+        3. run the auto_x_cancel_helper.exe
         4. After 10 second warning pops up switch to the screenshot window with alt+tab
         5. Put the tip of you mouse over the center of the bullet furthest to the right
-        6. After the ten seconds are up, the terminal output will show the color needed for the rgbneed var, and the xcord and ycord
     */
 
-    int xcord=value found with auto_x_cancel_helper;
-    int ycord=value found with auto_x_cancel_helper;
-    COLORREF rgbneed=value found with auto_x_cancel_helper;
+    //load bulletvars from /~/.auto_x_cancel/bullet-config
+    char* home=getenv("HOMEPATH");
+    if (home==NULL){
+        std::cout<<"HOMEPATH environment variable not set!\n";
+        return 0;
+    }
+    std::string bulletcfgfile=std::string(home)+"/.auto_x_cancel/bullet-config";
+    std::ifstream bulletcfg(bulletcfgfile, std::ios::binary);
+    if (!bulletcfg){
+        std::cout<<"Failed to open "<<home<<"/.auto_x_cancel/bullet-config!\n";
+        return 0;
+    }
+
+    //populate bullet with data read from the loaded struct
+    bulletvars bullet;
+    bulletcfg.read(reinterpret_cast<char*>(&bullet), sizeof(bulletvars));
+    bulletcfg.close();
 
     std::atomic<bool> firedgun{false};
 
@@ -43,7 +63,7 @@ int main(){
     t.detach();
 
     while (true){
-        if (getrgbvalues(rgbneed, xcord, ycord, display)){
+        if (getrgbvalues(bullet.rgbneed, bullet.xcord, bullet.ycord, display)){
             if (firedgun){ //if the listener updates firedgun from getting the left mouse input
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(15)); //small delay between key inputs
