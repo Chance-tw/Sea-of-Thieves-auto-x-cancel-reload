@@ -7,8 +7,15 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XTest.h>
+#include <fstream>
 
 std::atomic<bool> running{false};
+
+struct bulletvars{
+    int xcord=0;
+    int ycord=0;
+    std::uint32_t rgbneed=0;
+};
 
 void listener(std::atomic<bool> &firedgun, Display *display, Drawable &root); //listener for left mouse and exit keys
 
@@ -24,6 +31,19 @@ int main(){
     }
     Drawable root = DefaultRootWindow(display); //make a drawable on the root window
     XImage *captured=XGetImage(display, root, 0, 0, 1, 1, AllPlanes, ZPixmap); //initialize ximage structure to have value, so if it gets unallocated it doesnt seg fault
+    
+    //load bulletvars from /~/.config/auto_x_cancel/bullet-config
+    std::string bulletcfgfile=std::string(getenv("HOME"))+"/.config/auto_x_cancel/bullet-config";
+    std::ifstream bulletcfg(bulletcfgfile, std::ios::binary);
+    if (!bulletcfg){
+        std::cout<<"Failed to open /~/.config/auto_x_cancel/bullet-config!\n";
+        return 0;
+    }
+
+    //populate bullet with data read from the loaded struct
+    bulletvars bullet;
+    bulletcfg.read(reinterpret_cast<char*>(&bullet), sizeof(bulletvars));
+    bulletcfg.close();
 
     std::cout<<"Left CTRL+K to quit the program!\n";
 
@@ -31,15 +51,10 @@ int main(){
     How to use the auto_x_cancel_helper to get info for code to work
         1. Take a screenshot of your game with a weapon out
         2. Open the screenshot in a complete full screen mode
-        3. run the auto_x_cancel_helper
+        3. run the auto_x_cancel_helper_linux
         4. After 10 second warning pops up switch to the screenshot window with alt+tab
         5. Put the tip of you mouse over the center of the bullet furthest to the right
-        6. After the ten seconds are up, the terminal output will show the color needed for the rgbneed var, and the xcord and ycord
     */
-
-    int xcord=1770;
-    int ycord=980;
-    std::uint32_t rgbneed=9502645;
 
     std::atomic<bool> firedgun{false};
 
@@ -50,7 +65,7 @@ int main(){
     running=true;
 
     while (running){
-        if (getrgbvalues(rgbneed, xcord, ycord, display, root, captured)){
+        if (getrgbvalues(bullet.rgbneed, bullet.xcord, bullet.ycord, display, root, captured)){
             if (firedgun){ //if the listener updates firedgun from getting the left mouse input
                 sendx(display);
                 std::this_thread::sleep_for(std::chrono::milliseconds(15)); //small delay between key inputs
@@ -115,10 +130,12 @@ bool getrgbvalues(std::uint32_t rgbneed, int x, int y, Display *display, Drawabl
     ZPixmap: the format to return of the pixel map
     */
 
-    std::uint32_t rgb=XGetPixel(captured, 0, 0); //gets the pixel of the captured XImage
+    if (captured!=NULL){
+        std::uint32_t rgb=XGetPixel(captured, 0, 0); //gets the pixel of the captured XImage
 
-    if (rgbneed==rgb){ //if the rgb is the bullet color
-        return true;
+        if (rgbneed==rgb){ //if the rgb is the bullet color
+            return true;
+        }
     }
 
     return false;
