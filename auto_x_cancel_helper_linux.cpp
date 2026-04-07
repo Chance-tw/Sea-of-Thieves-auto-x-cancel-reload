@@ -58,7 +58,12 @@ int main(){
     cfgfile.rgbneed=color;
 
     //prep for new destination stuff
-    std::string newdirpath=std::string(getenv("HOME"))+"/.config/auto_x_cancel";
+    char* home=getenv("HOME");
+    if (home==NULL){
+        std::cout<<"HOME environment variable not set!\n";
+        return 0;
+    }
+    std::string newdirpath=std::string(home)+"/.config/auto_x_cancel";
     std::string newfilepath=newdirpath+"/bullet-config";
 
     try{
