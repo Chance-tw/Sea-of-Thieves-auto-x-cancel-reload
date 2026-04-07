@@ -12,8 +12,8 @@
 std::atomic<bool> running{false};
 
 struct bulletvars{
-    int xcord=0;
-    int ycord=0;
+    std::uint16_t xcord=0;
+    std::uint16_t ycord=0;
     std::uint32_t rgbneed=0;
 };
 
