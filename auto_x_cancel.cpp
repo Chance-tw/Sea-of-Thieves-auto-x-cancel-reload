@@ -13,9 +13,9 @@ struct bulletvars{
     std::uint32_t rgbneed=0;
 };
 
-void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killing); //kill process
+void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killed); //kill process
 
-void listener(std::atomic<bool> &firedgun); //listener for left mouse
+void listener(std::atomic<bool> &firedgun, std::atomic<bool> &killing); //listener for left mouse
 
 bool getrgbvalues(COLORREF rgbneed, int x, int y, HDC &devicecontext);
 
