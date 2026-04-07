@@ -33,7 +33,12 @@ int main(){
     XImage *captured=XGetImage(display, root, 0, 0, 1, 1, AllPlanes, ZPixmap); //initialize ximage structure to have value, so if it gets unallocated it doesnt seg fault
     
     //load bulletvars from /~/.config/auto_x_cancel/bullet-config
-    std::string bulletcfgfile=std::string(getenv("HOME"))+"/.config/auto_x_cancel/bullet-config";
+    char* home=getenv("HOME");
+    if (home==NULL){
+        std::cout<<"HOME environment variable not set!\n";
+        return 0;
+    }
+    std::string bulletcfgfile=std::string(home)+"/.config/auto_x_cancel/bullet-config";
     std::ifstream bulletcfg(bulletcfgfile, std::ios::binary);
     if (!bulletcfg){
         std::cout<<"Failed to open /~/.config/auto_x_cancel/bullet-config!\n";
