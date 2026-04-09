@@ -11,6 +11,7 @@
 
 std::atomic<bool> running{false};
 
+#pragma pack(1)
 struct bulletvars{
     std::uint16_t xcord=0;
     std::uint16_t ycord=0;
