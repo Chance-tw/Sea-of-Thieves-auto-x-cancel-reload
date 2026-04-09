@@ -48,6 +48,7 @@ int main(){
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(15)); //small delay between key inputs
                 sendx();
+                std::this_thread::sleep_for(std::chrono::milliseconds(75)); //larger delay to stop excessive x inputs being sent
             }
             else{
                 continue;
