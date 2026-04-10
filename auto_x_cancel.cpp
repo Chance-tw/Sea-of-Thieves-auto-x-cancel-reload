@@ -14,7 +14,7 @@ struct bulletvars{
     std::uint32_t rgbneed=0;
 };
 
-void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killed); //kill process
+void killpro(std::atomic<bool> &killing); //kill process
 
 void listener(std::atomic<bool> &firedgun, std::atomic<bool> &killing); //listener for left mouse
 
@@ -28,8 +28,7 @@ int main(){
     std::cout<<"CTRL+K to quit the program!";
     //start the listener for ctrl+k to kill the program at any point
     std::atomic<bool> killing{false}; //to notify threads to end
-    std::atomic<bool> killed{false}; //to notify threads are done killing
-    std::thread x(killpro, std::ref(display), std::ref(killing), std::ref(killed));
+    std::thread x(killpro, std::ref(killing));
     x.detach();
 
     /*
@@ -71,6 +70,7 @@ int main(){
                 sendx();
                 std::this_thread::sleep_for(std::chrono::milliseconds(15)); //small delay between key inputs
                 sendx();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); //larger delay to prevent excess x inputs
             }
             else{
                 continue;
@@ -82,12 +82,12 @@ int main(){
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); //small delay between rgb checks
     }
 
-    killed=true;
-
+    ReleaseDC(NULL, display); //release the device context for getting the screen
+            
     return 0;
 }
 
-void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &killed){
+void killpro(std::atomic<bool> &killing){
     //registers a hotkey to windows for if ctrl+k is pressed with the no repeat modifier
     RegisterHotKey(NULL, 234, 0x0002|0x4000,0x4B); //0x0002=any control, 0x400=no repeat(sending extra hotkey messages past the one), 0x4B=K
 
@@ -97,11 +97,6 @@ void killpro(HDC &devicecontext, std::atomic<bool> &killing, std::atomic<bool> &
         if (msg.message==WM_HOTKEY){ //if the message is the hotkey
             UnregisterHotKey(NULL, 234); //destroy hotkey so it doesnt persist after program ends
             killing=true;
-            while(!killed){
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
-            ReleaseDC(NULL, devicecontext); //release the device context for getting the screen
-            exit(0); //kill the whole program
         }
     }
 }
